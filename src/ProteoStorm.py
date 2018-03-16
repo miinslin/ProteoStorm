@@ -77,17 +77,20 @@ RAMgb = str(int(args.memory))
 MBsize = 60*int(RAMgb)/8 # split large pan-microbial database into chunks of size MBsize
 num_Spectra = 200000*int(RAMgb)/8 # number of spectra to partition per iteration
 
-platform_os = platform.platform() # determine platform
-if platform_os.split('-')[0]=='Windows':
+platform_os = platform.system() # determine platform
+if platform_os=='Windows':
     cygwinpath = str(args.cygwinpath)
     if not os.path.exists(cygwinpath):
         raise ValueError(cygwinpath, ' does not exist. Should be path to run.exe for Cygwin.')
     cygwinpath = os.path.normpath(cygwinpath)
     
-if platform_os.split('-')[0]=='Linux':
+if platform_os=='Linux':
+    cygwinpath = ''
+
+if platform_os=='Darwin':
     cygwinpath = ''
     
-if platform_os.split('-')[0] not in ['Linux','Windows']:
+if platform_os not in ['Linux','Windows','Darwin']:
     raise ValueError('platform not supported!')
 
 ##### DEFINE DIRECTORIES AND FILENAMES
