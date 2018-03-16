@@ -68,7 +68,10 @@ Input:
 ```
 
 Output:
+
+Files are located in [output]/[SpectralDataset]/S2_OutputFiles/
 ```
+- ProteoStorm_output.txt: PSMs identified after stage two of ProteoStorm.
 - peplevelFDR_0.01_peptides.txt: Peptide-spectrum matches with p-values computed using the MS-GF+ generating function
 - Pooled_0.01_pepFDR.tsv: Peptides passing 1% peptide-level FDR (pooled)
 - Pooled_0.01_pepFDR_nonpooled_0.01_psmFDR.tsv: PSMs passing both a 1% PSM-level FDR (per MS/MS experiment) and a 1% peptide-level FDR (pooled)
