@@ -87,11 +87,11 @@ if platform_os=='Windows':
 if platform_os=='Linux':
     cygwinpath = ''
 
-if platform_os=='Darwin':
-    cygwinpath = ''
+#if platform_os=='Darwin':
+#    cygwinpath = ''
     
-if platform_os not in ['Linux','Windows','Darwin']:
-    raise ValueError('platform not supported!')
+if platform_os not in ['Linux','Windows']:
+    raise ValueError(str(platform_os),' platform not supported!')
 
 ##### DEFINE DIRECTORIES AND FILENAMES
 # INPUT FILES
@@ -246,7 +246,7 @@ ProteoStormLOG.write('Stage Two Total:'+str(STAGETWO_end)+'\n'\
                      +'\t'+'CoreModule 2 (peptide-spectrum pair filtering):'+str(runtimes['coremodule2'])+'\n'\
                      +'\t'+'CoreModule 3 (pvalue computation):'+str(runtimes['coremodule3'])+'\n')
 
-print 'Stage one completed...\n'
+print 'Stage two completed...\n'
 
 ####======= WRITE PROTEOSTORM OUTPUT
 print '\nWriting PSMs to file...'
