@@ -83,11 +83,11 @@ Download and extract [demo files](https://www.dropbox.com/s/ckiyb2buzd6osyv/exam
 NOTE: If Windows user, remember to specify Cygwin path (e.g., --CygwinPATH "C:/cygwin64/bin/run.exe")
 
 * execution 1
-```sh
+<blockquote><p>
 python2.7 -u ./src/ProteoStorm.py --Database ./example/fasta --PartitionMassWindow 15 --Spectra ./example/mgf --SpectralDataset "demo_1" --RemoveSpectra ./example/HS_matched_spectra.txt --PepfilterEXE ./src/CoreModule2_PeptideFiltering.exe --S1SharedPeakCount 7 --S2SharedPeakCount 6 --output ./example/ProteoStorm_Out --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --pval_computation_jar ./src/MSGFPlus_pvalue.jar --aminoacid_freq ./src/364106_IL_transformed.fasta
-```
+</p></blockquote>
 
 * execution 2 (genera-restriction approach)
-```sh
+<blockquote><p>
 python2.7 -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --PartitionMassWindow 15 --Spectra ./example/mgf --SpectralDataset "demo_1" --RemoveSpectra ./example/HS_matched_spectra.txt --PepfilterEXE ./src/CoreModule2_PeptideFiltering.exe --S1SharedPeakCount 7 --S2SharedPeakCount 6 --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --RefSeqCatalog ./example/fasta_genera_restriction_approach/RefSeq-release85_SUB.catalog --pval_computation_jar ./src/MSGFPlus_pvalue.jar --aminoacid_freq ./src/364106_IL_transformed.fasta
-```
+</p></blockquote>
