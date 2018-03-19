@@ -35,8 +35,7 @@ Software Requirements
 
 * ```Cygwin```
 
-	* Install Devel packages (g++, gcc, make, gdb) if planning to compile C++
-	* Add "C:\cygwin\bin\" to environment variables-->System variables-->PATH
+	* Add "C:\cygwin64\bin\" to environment variables-->system variables-->PATH
 	* Add "export PATH=/cygdrive/c/Users/user/Anaconda2:$PATH" to .bashrc
 
 * ```Java```
@@ -62,17 +61,17 @@ Input:
 --FragmentMassTolerance # Fragment mass tolerance in Daltons (e.g., 0.015 for HCD).
 --InstrumentID # Identifier of the instrument to generate MS/MS spectra. Used to determine the scoring model in core module 3 (p-value computation). 0: Low-res LCQ/LTQ, 1: Orbitrap/FTICR, 3: Q-Exactive (Default).
 --FragmentMethodID # Fragmentation method identifier. Used to determine the scoring model in core module 3 (p-value computation). 1: CID, 3: HCD (Default).
---GeneraRestrictionApproach # 0: Do not use genera-restriction approach. 1: Use genera-restriction approach. Place UniProt fasta files in /[Database_dir]/UniProt_fasta, and RefSeq fasta files in /[Database_dir]/RefSeq_fasta.
 --pval_computation_jar # Path to p-value computation jar.
 --CygwinPATH # Required for Windows users (e.g., C:/cygwin64/bin/run.exe)
+--GeneraRestrictionApproach # 0: Do not use genera-restriction approach. 1: Use genera-restriction approach. Place UniProt fasta files in /[Database_dir]/UniProt_fasta, and RefSeq fasta files in /[Database_dir]/RefSeq_fasta.
+--RefSeqCatalog # Path to RefSeq Catalog.
 ```
 
 Output:
 
 Files are located in [output]/[SpectralDataset]/S2_OutputFiles/
 ```
-- ProteoStorm_output.txt: PSMs identified after stage two of ProteoStorm.
-- peplevelFDR_0.01_peptides.txt: Peptide-spectrum matches with p-values computed using the MS-GF+ generating function
+- ProteoStorm_output.txt: Peptide-spectrum matches (PSMs) identified after stage two of ProteoStorm, with p-values computed using the MS-GF+ generating function.
 - Pooled_0.01_pepFDR.tsv: Peptides passing 1% peptide-level FDR (pooled)
 - Pooled_0.01_pepFDR_nonpooled_0.01_psmFDR.tsv: PSMs passing both a 1% PSM-level FDR (per MS/MS experiment) and a 1% peptide-level FDR (pooled)
 ```
