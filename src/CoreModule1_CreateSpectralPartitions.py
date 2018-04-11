@@ -77,6 +77,7 @@ spectra_remove, fasta_thmmass_file, num_Spectra, PSlogfile, precursormasstol):
         elif SpecFileName in HS_spectra:
             matched_spec = HS_spectra[SpecFileName]           
         with open(os.path.join(spectra_dir,SpecFileName),'r') as specfile:
+            begin = 1
             for line in specfile:
                 if line.strip() =='BEGIN IONS':
                     begin = 0
