@@ -5,7 +5,7 @@ Software Requirements
 
 [MSConvert](http://proteowizard.sourceforge.net/tools.shtml) required for peak-picking and converting RAW files to MGF format.
 
-### Linux (ubuntu-16.04.4-desktop-amd64) ###
+### Linux ###
 1. ```Anaconda 2.7``` ***or*** ```Python2.7``` with numpy <br />
 ```sh
 $ wget https://repo.continuum.io/archive/Anaconda2-5.1.0-Linux-x86_64.sh
@@ -49,7 +49,7 @@ python -u ./src/ProteoStorm.py
 	[-inst MS2DetectorID] (0: Low-res LCQ/LTQ, 1: Orbitrap/FTICR, 2: TOF, 3: Q-Exactive(Default))
 	[-m FragmentMethodID] (1: CID, 3: HCD)
 	[-S1spc S1SharedPeaksCount] (Default: 7)
-	[-S2spc S2SharedPeaksCount] (Default: 6)
+	[-S2spc S2SharedPeaksCount] (Default: 7)
 	[-genera 0/1] (0: Create refined protein DB using peptide-level FDR (Default), 1: genera-restriction approach)
 	
 Output: ProteoStorm_output.txt (Peptide-spectrum matches (PSMs) with p-values computed using the MS-GF+ generating function.)
@@ -58,11 +58,11 @@ Output: ProteoStorm_output.txt (Peptide-spectrum matches (PSMs) with p-values co
 Demo
 ---------------
 **1.** Download and extract [demo files](https://drive.google.com/open?id=1LGNSdR4n0mNlztmIryi9SeLoy9420ugy) into ./ProteoStorm/example<br />
-**2.** Downlaod [Mass distribution files](https://drive.google.com/open?id=1FfQFeheN2BUSZ9BaA-t0PyspKpYIJrwn) into ./ProteoStorm/src/DBmassDistributions<br />
+**2.** Download [Mass distribution files](https://drive.google.com/open?id=1FfQFeheN2BUSZ9BaA-t0PyspKpYIJrwn) into ./ProteoStorm/src/DBmassDistributions<br />
 **3.** Run either Command 1 or 2 (genera-restriction approach) as provided below.<br />
 **4.** The expected output files for the test runs are located at ./ProteoStorm/example/ProteoStorm_Out/prerun_demo and ./ProteoStorm/example/ProteoStorm_Out_GeneraRestrictionApproach/prerun_demo.
 
-### Linux (ubuntu-16.04.4-desktop-amd64) ### 
+### Linux ### 
 
 Command 1
 ```
@@ -84,3 +84,7 @@ Command 2 (genera-restriction approach)
 ```
 python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --refDBfdr 0.01 --CygwinPATH "C:/cygwin64/bin/run.exe"
 ```
+
+Alternative configurations for ProteoStorm
+---------------
+[Alternative configurations for ProteoStorm PDF download](https://drive.google.com/file/d/17y7JxIy7duakiXHIFQ9P1IlMX1gMtM-i/view?usp=sharing)
