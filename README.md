@@ -1,98 +1,86 @@
-# ProteoStorm v 1.0
+# ProteoStorm v06222018 #
 
 Software Requirements
-==========
-1. ```Python2.7``` ([Anaconda 2.7](https://www.anaconda.com/download/?lang=en-us)):
-	- numpy
-	- biopython
-2. ```Java```
-3. ```Cygwin``` (required for Windows users)
+---------------
 
-**Linux (ubuntu-16.04.4-desktop-amd64)**
+[MSConvert](http://proteowizard.sourceforge.net/tools.shtml) required for peak-picking and converting RAW files to MGF format.
 
-* ```Anaconda```
-	```sh
-	$ wget https://repo.continuum.io/archive/Anaconda2-5.1.0-Linux-x86_64.sh
-	$ bash Anaconda2-5.1.0-Linux-x86_64.sh
-	$ conda install biopython
-	```
-
-* ```Java```
-	```sh
-	$ sudo apt-get update
-	$ sudo apt-get install default-jre
-	```
-
-**Windows**
-
-* ```Anaconda```
-	
-	* Download from https://www.anaconda.com/download/
-	* Install biopython
-	```sh
-	$ conda install biopython
-	```
-
-* ```Cygwin```
-
-	* Add "C:\cygwin64\bin\" to environment variables-->system variables-->PATH
-	* Add "export PATH=/cygdrive/c/Users/user/Anaconda2:$PATH" to .bashrc
-
-* ```Java```
-
-	* Download from https://java.com/en/download/
-
-Execution
-==========
-Use the following command to see all available options in ProteoStorm
+### Linux (ubuntu-16.04.4-desktop-amd64) ###
+1. ```Anaconda 2.7``` ***or*** ```Python2.7``` with numpy <br />
 ```sh
-python -u ./src/ProteoStorm.py --help
+$ wget https://repo.continuum.io/archive/Anaconda2-5.1.0-Linux-x86_64.sh
+$ bash Anaconda2-5.1.0-Linux-x86_64.sh
 ```
 
-**Input:**
-```
---Database # Directory of protein database files in fasta format.
---Spectra # Directory of spectral datasets in MGF format, peak-picked and converted using [MSConvert](http://proteowizard.sourceforge.net/tools.shtml)
---RemoveSpectra # File containing spectra filename and scan numbers to remove. See ./example/HS_matched_spectra.txt.
---output # Main directory for ProteoStorm output
---SpectralDataset # Name of metaproteomics dataset. Will be used as subdirectory name.
---PepfilterEXE # Path to core module 2 (peptide filtering) executable. Use pre-compiled binaries (CoreModule2_PeptideFiltering_Windows-x86_64.exe, CoreModule2_PeptideFiltering_Linux-x86_64.exe).
---PrecursorMassTolerance # Precursor mass tolerance in ppm (e.g., 10 for HCD).
---FragmentMassTolerance # Fragment mass tolerance in Daltons (e.g., 0.015 for HCD).
---InstrumentID # Identifier of the instrument to generate MS/MS spectra. Used to determine the scoring model in core module 3 (p-value computation). 0: Low-res LCQ/LTQ, 1: Orbitrap/FTICR, 3: Q-Exactive (Default).
---FragmentMethodID # Fragmentation method identifier. Used to determine the scoring model in core module 3 (p-value computation). 1: CID, 3: HCD (Default).
---pval_computation_jar # Path to p-value computation jar.
---CygwinPATH # Required for Windows users (e.g., C:/cygwin64/bin/run.exe)
---GeneraRestrictionApproach # 0: Do not use genera-restriction approach. 1: Use genera-restriction approach. Place UniProt fasta files in /[Database_dir]/UniProt_fasta, and RefSeq fasta files in /[Database_dir]/RefSeq_fasta.
---RefSeqCatalog # Path to RefSeq Catalog.
+2. ```Java (1.8 or above)```<br />
+```sh
+$ sudo apt-get update
+$ sudo apt-get install default-jre
 ```
 
-**Output:**
-Files are located in [output]/[SpectralDataset]/S2_OutputFiles/
-```
-- ProteoStorm_output.txt: Peptide-spectrum matches (PSMs) identified after stage two of ProteoStorm, with p-values computed using the MS-GF+ generating function.
-- Pooled_0.01_pepFDR.tsv: Peptides passing 1% peptide-level FDR (pooled)
-- Pooled_0.01_pepFDR_nonpooled_0.01_psmFDR.tsv: PSMs passing both a 1% PSM-level FDR (per MS/MS experiment) and a 1% peptide-level FDR (pooled)
+### Windows ### 
+1. ```Anaconda 2.7```<br />
+```sh
+download from https://www.anaconda.com/download/?lang=en-us
 ```
 
+2. ```Java (1.8 or above)```<br />
+```sh
+download from https://java.com/en/download/
+```
+
+3. ```Cygwin```<br />
+```sh
+download from https://cygwin.com/install.html
+Add "C:\cygwin64\bin\" to environment variables-->system variables-->PATH
+Add "export PATH=/cygdrive/c/Users/user/Anaconda2:$PATH" to .bashrc
+```
+
+Usage
+---------------
+```sh
+python -u ./src/ProteoStorm.py
+	-D DatabaseDirectory (Directory containing database files in fasta format)
+	-S SpectralDirectory (Directory containing spectral datasets in MGF format, peak-picked and converted from RAW using MSConvert)
+	-O OutputDirectory
+	[-MSMS SubdirectoryName] (Name of metaproteomics dataset, Default: date_time)
+	[-ms1t PrecursorMassTolerance] (e.g., 10, 20, 50, Default: 10)
+	[-ms2t FragmentMassTolerance] (e.g., 0.015, 0.6 Default: 0.015)
+	[-inst MS2DetectorID] (0: Low-res LCQ/LTQ, 1: Orbitrap/FTICR, 2: TOF, 3: Q-Exactive(Default))
+	[-m FragmentMethodID] (1: CID, 3: HCD)
+	[-S1spc S1SharedPeaksCount] (Default: 7)
+	[-S2spc S2SharedPeaksCount] (Default: 6)
+	[-genera 0/1] (0: Create refined protein DB using peptide-level FDR (Default), 1: genera-restriction approach)
+	
+Output: ProteoStorm_output.txt (Peptide-spectrum matches (PSMs) with p-values computed using the MS-GF+ generating function.)
+```
+	
 Demo
-==========
-**1.** Download and extract [demo files](https://drive.google.com/file/d/13k0VANfTPdeLEQ2beZ6Uu5DNaGyJEwiS/view?usp=sharing) into the ProteoStorm main directory.<br />
-**2.** Run either demo command 1 or 2 (genera-restriction approach) as provided below. For Windows users, refer to NOTE below.<br />
-**3.** The expected output files for the test runs are located at /example/ProteoStorm_Out/prerun_demo and /example/ProteoStorm_Out_GeneraRestrictionApproach/prerun_demo.
+---------------
+**1.** Download and extract [demo files](https://drive.google.com/open?id=1LGNSdR4n0mNlztmIryi9SeLoy9420ugy) into ./ProteoStorm/example<br />
+**2.** Downlaod [Mass distribution files](https://drive.google.com/open?id=1FfQFeheN2BUSZ9BaA-t0PyspKpYIJrwn) into ./ProteoStorm/src/DBmassDistributions<br />
+**3.** Run either Command 1 or 2 (genera-restriction approach) as provided below.<br />
+**4.** The expected output files for the test runs are located at ./ProteoStorm/example/ProteoStorm_Out/prerun_demo and ./ProteoStorm/example/ProteoStorm_Out_GeneraRestrictionApproach/prerun_demo.
 
-**NOTE for Windows users:** <br />
+### Linux (ubuntu-16.04.4-desktop-amd64) ### 
 
-* Append Cygwin path parameter to command (e.g., --CygwinPATH "C:/cygwin64/bin/run.exe")<br />
-* Specify --PepfilterEXE as ./src/CoreModule2_PeptideFiltering_Windows-x86_64.exe
-
-
-**command 1**
+Command 1
 ```
-python -u ./src/ProteoStorm.py --Database ./example/fasta --PartitionMassWindow 15 --Spectra ./example/mgf --SpectralDataset "demo" --RemoveSpectra ./example/HS_matched_spectra.txt --PepfilterEXE ./src/CoreModule2_PeptideFiltering_Linux-x86_64.exe --S1SharedPeakCount 7 --S2SharedPeakCount 6 --output ./example/ProteoStorm_Out --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --pval_computation_jar ./src/MSGFPlus_pvalue.jar --aminoacid_freq ./src/364106_IL_transformed.fasta
+python -u ./src/ProteoStorm.py --Database ./example/fasta --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3
+```
+Command 2 (genera-restriction approach)
+```
+python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --refDBfdr 0.01
 ```
 
-**command 2 (genera-restriction approach)**
+### Windows ### 
+***Replace "C:/cygwin64/bin/run.exe" with corresponding path in system.***
+
+Command 1
 ```
-python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --PartitionMassWindow 15 --Spectra ./example/mgf --SpectralDataset "demo" --RemoveSpectra ./example/HS_matched_spectra.txt --PepfilterEXE ./src/CoreModule2_PeptideFiltering_Linux-x86_64.exe --S1SharedPeakCount 7 --S2SharedPeakCount 6 --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --RefSeqCatalog ./example/fasta_genera_restriction_approach/RefSeq-release85_SUB.catalog --pval_computation_jar ./src/MSGFPlus_pvalue.jar --aminoacid_freq ./src/364106_IL_transformed.fasta
+python -u ./src/ProteoStorm.py --Database ./example/fasta --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --CygwinPATH "C:/cygwin64/bin/run.exe"
+```
+Command 2 (genera-restriction approach)
+```
+python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --refDBfdr 0.01 --CygwinPATH "C:/cygwin64/bin/run.exe"
 ```

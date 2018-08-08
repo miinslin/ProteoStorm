@@ -3,7 +3,7 @@ import os
 
 def pepfilter(proteostorm_exe, Proteostorm_dir, subdir, 
               spectraparts_dir, stage, mods, raw_score_cutoff,
-              precursormasstol, fragmasstol):
+              precursormasstol, fragmasstol, TMT_labeling):
     
     maindir = os.path.join(Proteostorm_dir, subdir)
     
@@ -29,27 +29,40 @@ def pepfilter(proteostorm_exe, Proteostorm_dir, subdir,
     PS_inputfiles.sort(key=lambda s: s[1])
     PS_inputfiles = [x[0] for x in PS_inputfiles]
     
+    tmtparam = ' -tmt 0'
+    
+    if TMT_labeling ==1:
+        tmtparam = ' -tmt 1'
+    
     for filenum, ps_input in enumerate(PS_inputfiles):
         indx = ps_input[:-4].split('_')[-1]
-        specfile = os.path.join(spectraparts_dir, 'SpecPart_'+indx+'.mgf')
-        if not os.path.exists(specfile):
+        specfiles = [s for s in os.listdir(spectraparts_dir) if 'SpecPart_'+indx+'_' in s]
+        
+        if not specfiles:
             continue
-        number_of_commands+=1
-        logfilename = os.path.join(proteostormlogfile_dir,'part_'+indx+'.log')
         
-        command = proteostorm_exe+' -i '+ '"'+specfile+'" -p "'+os.path.join(proteostorminput_dir, ps_input)+'"'+\
-        ' -o "'+os.path.join(proteostormoutput_dir, 'part_'+indx+'.tsv')+'"'+\
-        ' -ms1tol '+str(int(precursormasstol))+' -ms2tol '+str(fragmasstol)+\
-        ' -s '+str(raw_score_cutoff)+' > "'+ logfilename+'"'
+        number_of_commands+=len(specfiles)
         
-        commandsoutput.append(command)
+        for s in specfiles:
+            specfile = os.path.join(spectraparts_dir, s)
+            logfilename = os.path.join(proteostormlogfile_dir, s[:-4]+'.log')
+            outfilename = os.path.join(proteostormoutput_dir, s[:-4]+'.tsv')
+
+            command = proteostorm_exe+' -i '+ '"'+specfile+'" -p "'+os.path.join(proteostorminput_dir, ps_input)+'"'+\
+            ' -o "'+outfilename+'"'+\
+            ' -ms1tol '+str(int(precursormasstol))+' -ms2tol '+str(fragmasstol)+tmtparam+\
+            ' -s '+str(raw_score_cutoff)+' > "'+ logfilename+'"'
+        
+            commandsoutput.append(command)
 
     return {'shcommand':commandsoutput,'num_commands':number_of_commands}
 
 def pvaluecomputation(MSGFpvaluejar, Proteostorm_dir, subdir,
                       stage, spectraparts_dir, aafreq_fasta,
-                      precursormasstol, instrument, fragmentmet, RAMgb):
+                      precursormasstol, instrument, fragmentmet, RAMgb,
+                      min_pep_len, max_pep_len, modsfile):
     
+    num_threads = 1
     maindir = os.path.join(Proteostorm_dir, subdir)
 
     outputdir = os.path.join(maindir,stage+'_OutputFiles')
@@ -77,16 +90,18 @@ def pvaluecomputation(MSGFpvaluejar, Proteostorm_dir, subdir,
             if entries ==0:
                 continue
             
-        indx = ps_filter[:-4].split('_')[-1]
-        specfile = os.path.join(spectraparts_dir, 'SpecPart_'+indx+'.mgf')
-        logfilename = os.path.join(logdir,'SpecEvalues_part_'+indx+'.log')
+        specfile = os.path.join(spectraparts_dir, ps_filter[:-4]+'.mgf')
+        logfilename = os.path.join(logdir, ps_filter[:-4]+'.log')
+        outfilename = os.path.join(pval_output, ps_filter[:-4]+'.tsv')
         
         number_of_commands+=1
         command = 'java -Xmx'+RAMgb+'G -jar "'+MSGFpvaluejar+'" -s '+\
         '"'+specfile+'" -d "'+aafreq_fasta+'"'+' -x "'+os.path.join(ProteoStorm_filtered, ps_filter)+'"'+\
-        ' -o "'+os.path.join(pval_output, 'SpecEvalues_part_'+indx+'.tsv')+'"'+\
+        ' -o "'+outfilename+'"'+\
         ' -t '+str(precursormasstol)+'ppm -tda 0 -m '+str(fragmentmet)+' -inst '+str(instrument)+\
-        ' -e 1 -ntt '+ntt+' -thread 1 > "'+logfilename+'"'
+        ' -minLength '+str(int(min_pep_len))+' -maxLength '+str(int(max_pep_len))+\
+        ' -mod "'+modsfile+'"'+\
+        ' -e 1 -ntt '+ntt+' -thread '+str(num_threads)+' > "'+logfilename+'"'
         
         commandsoutput.append(command)            
     

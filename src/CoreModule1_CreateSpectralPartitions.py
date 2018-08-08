@@ -1,20 +1,25 @@
 # -*- coding: utf-8 -*-
 import os, re, time
 import numpy as np
-
-#only works with mgf files converted using MSConvert
+#Input mgf files have to be converted from RAW using MSConvert
 
 def CreateSpectralParts(spectra_dir, spectralparts_dir, \
-spectra_remove, fasta_thmmass_file, num_Spectra, PSlogfile, precursormasstol):
+spectra_remove, dbp_ranges, num_Spectra, PSlogfile, precursormasstol,\
+massbin_n):
+    
+    idxcount = [0 for x in xrange(massbin_n)]
+    
+    Buffsize = 209715200
+    
     # CRC_Handbook_of_Chemistry_and_Physics
     # mass of proton 1.00727646688
     # msgfplus/src/main/java/edu/ucsd/msjava/msutil/Composition.java
     proton_mass = 1.00727649
     # mass difference between C12 and C13 is 1.003355
     isotope = 1.003355
+#    multiplier = 0.9995
     
     print 'Spectral partitioning...'
-    print '\t', num_Spectra, ' spectra per iteration.'
     
     start_time = time.time()
     
@@ -34,21 +39,18 @@ spectra_remove, fasta_thmmass_file, num_Spectra, PSlogfile, precursormasstol):
         e = (tmrange[1]*(1+(precursormasstol/(10**6))))+1*(isotope)
         return (s,e)
 
-    dbp_ranges = []
-    with open(fasta_thmmass_file,'r') as fastapartmass:
-        for fastapart, line in enumerate(fastapartmass):
-            splitlines = line.strip().split('\t')
-            dbpart_s = float(splitlines[0])
-            dbpart_e = float(splitlines[1])
-            dbp_ranges.append(mmrange_given_tmrange((dbpart_s,dbpart_e)))
-
-    def writespectratofile(sorted_pepmass, spectra):
+    dbp_ranges = [mmrange_given_tmrange((x[0],x[1])) for x in dbp_ranges]
+    
+    def numpeaks(mzlist):
+        return sum([1 for x in mzlist[1:-1] if '=' not in x])
+    
+    def writespectratofile(sorted_pepmass, spectra, idxcount):
         # list of (spectralindex,precursormass)
         sorted_pepmass.sort(key=lambda x: x[1])
         pmass_only = np.array([pmass[1] for pmass in sorted_pepmass])
 
         for fastapart, fp_mmrange in enumerate(dbp_ranges):
-            spectraoutfile = os.path.join(spectralparts_dir, 'SpecPart_'+str(fastapart)+'.mgf')
+            spectraoutfile = os.path.join(spectralparts_dir, 'SpecPart_'+str(fastapart)+'_'+str(idxcount[fastapart])+'.mgf')
             leftindex = np.searchsorted(pmass_only,fp_mmrange[0], side='left')
             rightindex = np.searchsorted(pmass_only,fp_mmrange[1], side='right')
             
@@ -56,8 +58,14 @@ spectra_remove, fasta_thmmass_file, num_Spectra, PSlogfile, precursormasstol):
                 continue
             
             if os.path.exists(spectraoutfile):
-                outfile = open(spectraoutfile,'a')
-            elif not os.path.exists(spectraoutfile):
+                #check file size
+                current_filesize = os.stat(spectraoutfile).st_size
+                if current_filesize>Buffsize:
+                    idxcount[fastapart]+=1
+                    spectraoutfile = os.path.join(spectralparts_dir, 'SpecPart_'+str(fastapart)+'_'+str(idxcount[fastapart])+'.mgf')
+                else:
+                    outfile = open(spectraoutfile,'a')
+            if not os.path.exists(spectraoutfile):
                 outfile = open(spectraoutfile,'w')
             
             for sp in sorted_pepmass[leftindex:rightindex]:
@@ -97,7 +105,7 @@ spectra_remove, fasta_thmmass_file, num_Spectra, PSlogfile, precursormasstol):
                         spectrum.append(line.strip())
                     elif line.strip()[:7] == 'CHARGE=':
                         charge = float(re.findall('\d+', line.strip())[0])
-                        precursormass = (precursorMassCharge*charge)-(proton_mass*charge)
+                        precursormass = round((precursorMassCharge*charge)-(proton_mass*charge), 4)
                         if precursormass<dbp_ranges[0][0] or precursormass>dbp_ranges[-1][1]:
                             begin =1
                             continue
@@ -106,7 +114,13 @@ spectra_remove, fasta_thmmass_file, num_Spectra, PSlogfile, precursormasstol):
                         spectrum.append(line.strip())
                         if charge == 0:
                             begin =1
-                            continue                            
+                            spectrum = []
+                            continue
+                        # if less than 10 peaks, ignore.
+                        if numpeaks(spectrum)<10:
+                            begin = 1
+                            spectrum = []
+                            continue
                         spectra.append(spectrum)
                         spectralindex +=1
                         totalnumspecparsed+=1
@@ -115,14 +129,14 @@ spectra_remove, fasta_thmmass_file, num_Spectra, PSlogfile, precursormasstol):
                         charge = 0
                         if spectralindex >= num_Spectra:
                             if spectra:
-                                writespectratofile(sorted_pepmass, spectra)
+                                writespectratofile(sorted_pepmass, spectra, idxcount)
                             sorted_pepmass = []
                             spectra = []
                             spectralindex = -1
                     else:
                         spectrum.append(line.strip())
     if spectra:
-        writespectratofile(sorted_pepmass, spectra)
+        writespectratofile(sorted_pepmass, spectra, idxcount)
         sorted_pepmass = []
         spectra = []        
 

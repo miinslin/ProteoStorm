@@ -43,6 +43,7 @@ def PeptideLvlFDRout(S2_OutputFiles, S2_peplvl_FDR, ProteoStormLOG):
     decoy_prefix = 'XXX_'
     FDR_calc_score_direction = -1
     FDRcompute_targetpass_col = 0
+    FDRcompute_decoypass_col = 1
     
     peplevel = {}
     for specf in combined_scans:
@@ -76,7 +77,8 @@ def PeptideLvlFDRout(S2_OutputFiles, S2_peplvl_FDR, ProteoStormLOG):
     
     #write peptides passing pep level FDR to file
     with open(os.path.join(S2_OutputFiles,'Pooled_0.01_pepFDR.tsv'),'w') as outfile,\
-    open(os.path.join(S2_OutputFiles,'peplevelFDR_0.01_peptides.txt'),'w') as EMoutfile:
+    open(os.path.join(S2_OutputFiles,'peplevelFDR_0.01_peptides.txt'),'w') as EMoutfile,\
+    open(os.path.join(S2_OutputFiles,'peplevelFDR_0.01_luckydecoys.txt'),'w') as withdecoy:
         outfile.write('#'+'\t'.join(header)+'\n')
         peplist = set()
         for targetpsm in peplevelFDR[FDRcompute_targetpass_col]:
@@ -85,6 +87,13 @@ def PeptideLvlFDRout(S2_OutputFiles, S2_peplvl_FDR, ProteoStormLOG):
             peplist.add(pepseq_nomods)
     
         EMoutfile.write('\n'.join(sorted(peplist)))
+        
+        peplist_decoy = set()
+        for decoypsm in peplevelFDR[FDRcompute_decoypass_col]:
+            pepseq_nomods = ''.join([aa for aa in decoypsm[prepost_pepseq_idx][2:-2] if aa.isalpha()])
+            peplist_decoy.add(pepseq_nomods)
+        
+        withdecoy.write('\n'.join(sorted(peplist_decoy)))
     
     #=====calculate 1% PSM level fdr for each file (non-pooled) =========#
     with open(os.path.join(S2_OutputFiles,'Pooled_0.01_pepFDR_nonpooled_0.01_psmFDR.tsv'),'w') as outfile:

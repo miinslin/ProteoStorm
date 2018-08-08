@@ -1,62 +1,37 @@
 # -*- coding: utf-8 -*-
-import os, re, time, itertools
-import numpy as np
-from Bio import SeqIO
+import os, time, itertools
 from ComputeFDR import Compute_FDR
 from operator import itemgetter
-from InSilicoDigest import insilicodigest
-from CoreModule1_CreateDBPartitions import CreateDBPartitions
-import shutil
 
 def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
-                         max_massdiff,
-                         min_pep_len, max_pep_len,
-                         miscleavages,
                          REFINED_DB_PEPLEVEL_FDR,
-                         enzyme, PSlogfile,
-                         RAMgb, parallel_n, cygwinpath):
+                         PSlogfile, fastaIDmap, FASTA_dir, save_space):
 
     print '\tCreating refined database (genera restriction approach)...'
     start_time = time.time()
+
+    max_fidx = max(int(x) for x in fastaIDmap.values())
+#    print 'max fasta idx:', max_fidx 
+    
+    from itertools import izip
+    inv_fastaIDmap = dict(izip(fastaIDmap.itervalues( ), fastaIDmap.iterkeys( )))
     
     ## PARAMS
     INITIAL_PEPLEVEL_FDR = 0.01
-    CREATE_DBPARTS_for_SEMITRYP_S2 = 1
-#    CREATE_MODIFICATION_DBPARTS = 0
     
-    REMOVE_KRP = 1
     ABUNDANCE_DECOY_BASED = 1 # only accept taxon with abundance better than the first decoy taxon
     TAXON_ABUNDANCE_THRESHOLD = '' # 0.5%
     TAXON_ABUNDANCE_TYPE = 'PEPTIDE' # either 1% peptides, or psms mapping to peptides. PEPTIDE or PSM
     
     ## DIRECTORIES/FILES
     s1preprocessing_output = os.path.join(ProteoStorm_dir, 'S1_PreprocessingOutput')
-    S1_fastachunk_dir = os.path.join(s1preprocessing_output, 'FastaChunks')
-    S1_protein_mappingsdir = os.path.join(s1preprocessing_output, 'ProteinMappings')
+    S1_PS_dir = os.path.join(s1preprocessing_output, 'ProteoStorm_input') # contains mappings
+
+    
     S1_OutputFiles = os.path.normpath(os.path.join(ProteoStorm_dir, subfoldername, 'S1_OutputFiles'))
     tsv_out = os.path.normpath(os.path.join(S1_OutputFiles, 'PVAL_computations'))
     S2_InputFiles = os.path.join(ProteoStorm_dir, subfoldername,'S2_InputFiles')
-    matchfilesdir = os.path.normpath(os.path.join(S2_InputFiles ,'MatchFilesDir_genus'))
-
-    if os.path.exists(matchfilesdir):
-        if len(os.listdir(matchfilesdir))>0:
-            print 'Match files already exist...deleting old files...'
-            shutil.rmtree(matchfilesdir)
-    if not os.path.exists(matchfilesdir):
-        os.makedirs(matchfilesdir)
-
-    if CREATE_DBPARTS_for_SEMITRYP_S2 == 1:
-        tempfiledir = os.path.normpath(os.path.join(S2_InputFiles, 'temp_DBfiles'))
-        if not os.path.exists(tempfiledir):
-            os.makedirs(tempfiledir)
-    
-    ## CHECK DIRECTORIES
-    for dirc in [S1_fastachunk_dir, 
-                 S1_protein_mappingsdir,
-                 tsv_out]:
-        if not dirc:
-            PSlogfile.write('Check directory: '+dirc+'\n')
-            raise ValueError('Check directory: ', dirc)
+    os.mkdir(S2_InputFiles)
     
     ## INTERMEDIATE FILES
     BESTPEPTIDEforSPECTRUMfile = os.path.join(S1_OutputFiles,'S1_No_cutoff_AllPSMs.txt')
@@ -91,14 +66,14 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
     combined_scans = {}
     tsv_out_list = sorted(os.listdir(tsv_out))
     for tsv in tsv_out_list:
-        partition_idx = tsv[:-4].split('_')[-1]
-        proteinmappingfile = [z for z in os.listdir(S1_protein_mappingsdir) if z[:-8].split('_')[-1]==partition_idx][0]
+        partition_idx = tsv.split('_')[1]
+        proteinmappingfile = os.path.join(S1_PS_dir, 'DBPart_'+partition_idx+'.txt') # split by '\t', i==3
         
         protmap = {}
-        with open(os.path.join(S1_protein_mappingsdir,proteinmappingfile),'r') as mfile:
+        with open(proteinmappingfile,'r') as mfile:
             for line in mfile:
-                splitline = line.strip().split()
-                protmap[splitline[0]] = splitline[1]
+                splitline = line.strip().split('\t')
+                protmap[splitline[1][2:-2]] = splitline[3]
         
         with open(os.path.join(tsv_out,tsv),'r') as infile:
             for line in infile:
@@ -172,56 +147,36 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
         for pep in peplevel:
             outfile.write('\t'.join(peplevel[pep])+'\n')
 
-    # ============= local write matching files =====================##
-    totalnumchunks = len([x for x in os.listdir(S1_fastachunk_dir) if x.endswith('.fasta') and 'revCat.fasta' not in x])
-
-    for CIDX in range(0,totalnumchunks):
-        Fastafile = os.path.join(S1_fastachunk_dir,\
-                                 [x for x in os.listdir(S1_fastachunk_dir) if x[:-6].split('_')[-1]==str(CIDX)\
-                                  and x.endswith('.fasta') and 'revCat.fasta' not in x][0])     
-    
-        concatenated_prots = ''.join(['$'+str(record.seq)+'*' for record in SeqIO.parse(Fastafile, "fasta")])
-        all_end_pos = np.array([m.start() for m in re.finditer(r'[*]', concatenated_prots)])
-    
-        with open(os.path.join(matchfilesdir,'combinedDB_part_'+str(CIDX)+'.match'),'w') as outfile:
-            for peptide in unique_peplist:
-                # already having correct mapping. 
-                matches = [z.replace('d_','').split('|')[1] for z in peptide[1].split(';') if z.split('|')[0]==str(CIDX)]
-                if not matches:
-                    outfile.write('-1'+'\n')
-                elif matches:
-                    outfile.write('\t'.join([str(np.searchsorted(all_end_pos,int(m),side='right')) for m in matches])+'\n') 
-    
-    del concatenated_prots
-    del all_end_pos
-    del matches
-    
-    # ============= write file with psms and taxon ids =====================##
+    # ============= detemine genera for peptides =====================##
     # includes both decoys and targets
     m_peptides_g = {z:{} for z in [x[0] for x in unique_peplist]}
-    
-    for chidx in range(0,totalnumchunks):
-        mfile = os.path.join(matchfilesdir, 'combinedDB_part_'+str(chidx)+'.match')
-        fastafile = os.path.join(S1_fastachunk_dir,'combinedDB_part_'+str(chidx)+'.fasta')
+    for f in xrange(max_fidx+1):
+        f_idx = str(f)
+        # header: >protein_name \t genus \t taxonID
+        # user can parse ncbi taxonomy xml for other taxon level
+        with open(os.path.join(FASTA_dir, inv_fastaIDmap[f_idx]+'.fasta'),'r') as infile:
+            generalist = [line.strip().split('\t')[1] for line in infile.readlines() if line[0]=='>'] 
         
-        generalist = [str(record.description).split()[1] for record in SeqIO.parse(fastafile, "fasta")]
-        
-        with open(mfile,'r') as infile:
-            for pi, p in enumerate(infile.readlines()):         
-                if p.strip()!= '-1':
-                    #unmodified peptide
-                    pepseq = unique_peplist[pi][0]
-                    # given protein index in chunk, append taxon id to peptide dictionary
-                    for prot_idx in [int(z) for z in p.strip().split('\t')]:
-                        taxon = generalist[prot_idx]
-                        # fasta chunk idx, protein idx
-                        cidx_protidx_td = str(chidx)+'|'+str(prot_idx)
-                        if taxon in m_peptides_g[pepseq]:
-                            m_peptides_g[pepseq][taxon].add(cidx_protidx_td)
-                        else:
-                            m_peptides_g[pepseq][taxon] = set([cidx_protidx_td])
-    
+        # peptide = (pepgroup, mappings)
+        for peptide in unique_peplist:
+            matches = [z.replace('d_','').split('|')[1] for z in peptide[1].split(';') if z.split('|')[0]==f_idx]
+            if matches:
+                pepseq = peptide[0]
+                # given protein index in chunk, append taxon id to peptide dictionary
+                for prot_idx in [int(z) for z in matches]:
+                    taxon = generalist[prot_idx]
+                    # fasta chunk idx, protein idx
+                    cidx_protidx_td = str(f_idx)+'|'+str(prot_idx)
+                    if taxon in m_peptides_g[pepseq]:
+                        m_peptides_g[pepseq][taxon].add(cidx_protidx_td)
+                    else:
+                        m_peptides_g[pepseq][taxon] = set([cidx_protidx_td])
+                    
+    del matches
+
+    # ============= write file with psms and taxon ids =====================##
     # pepgroup does not include charge
+    # no cutoff applied yet
     with open(psm_taxon_file,'w') as outfile:
         outfile.write('#'+'\t'.join(['Specfilename','Scannum','Peptide', 'Pepgroup', 'Protein','RawScore','pValue', 'taxonMappings'])+'\n')
         for pepgroup in peplevel:
@@ -232,7 +187,6 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
     del m_peptides_g
     del unique_peplist
     del peplevel
-    shutil.rmtree(matchfilesdir)
     
     #################################################################################################################          
     peptide_psm_nocutoff = []
@@ -300,7 +254,8 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
             total_unique_genus_pep['totalpeptides']+=1
             all_passing_peptides_file.write(peptide[3]+'\t'+peptide[4]+'\t'+str(peptide[6])+'\n')
             # taxon is the genusname
-            # taxon:0|2342|len,1|32432|len;taxon2:3|2343|len,3|2222|len
+            # fasta chunk idx| protein idx
+            # taxon:0|2342,1|32432;taxon2:3|2343,3|2222
             taxonlist = {z.split(':')[0]:z.split(':')[1].split(',') for z in peptide[mapping_col].split(';')}
             taxon_num = set(taxonlist.keys())
             if len(taxon_num) ==1:
@@ -350,6 +305,10 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
             sort_taxon_bypvalue.append((genus, counts, abundance))
         
     sort_taxon_bypvalue = sorted(sort_taxon_bypvalue, key=itemgetter(2), reverse = True)
+    with open(os.path.join(S1_OutputFiles, 'S1_taxon_peplevel_'+str(INITIAL_PEPLEVEL_FDR)+'_all.txt'),'w') as outfile:
+        outfile.write('\t'.join(['#Genus','PeptideCount','Abundance'])+'\n')
+        for item in sort_taxon_bypvalue:
+            outfile.write('\t'.join([str(z) for z in item])+'\n')
 
     if ABUNDANCE_DECOY_BASED ==1:
         # find abundance for first decoy
@@ -376,15 +335,14 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
 
     all_passing_peptides = PEPLEVEL_FDR_DB[FDRcompute_targetpass_col]
     all_passing_peptides.extend(PEPLEVEL_FDR_DB[FDRcompute_decoypass_col])
-    peplist = [z[pepseq_col] for z in all_passing_peptides]
 
     PSlogfile.write(str(len(PEPLEVEL_FDR_DB[FDRcompute_targetpass_col]))+' target peptides passing FDR threshold'+'\n')
     PSlogfile.write(str(len(PEPLEVEL_FDR_DB[FDRcompute_decoypass_col]))+' decoy peptides passing FDR threshold'+'\n')
     PSlogfile.write(str(PEPLEVEL_FDR_DB[FDRcompute_scorethreshold])+' cut off score at '+str(round(100*(float(PEPLEVEL_FDR_DB[FDRcompute_FDRscore])),3))+'% FDR'+'\n')
     del PEPLEVEL_FDR_DB
     
-    target_proteins = {str(chidx):set() for chidx in range(0,totalnumchunks)}
-    decoy_proteins = {str(chidx):set() for chidx in range(0,totalnumchunks)}
+    target_proteins = {str(chidx):set() for chidx in xrange(max_fidx+1)}
+    decoy_proteins = {str(chidx):set() for chidx in xrange(max_fidx+1)}
     
     chosen_taxons = set([z[0] for z in sort_taxon_bypvalue])
     
@@ -392,7 +350,8 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
     for pi, peptide in enumerate(all_passing_peptides):
         istarget = bool(decoy_prefix not in peptide[protein_col])
         # taxon is genusname
-        # taxon:0|2342|t,1|32432|d;taxon2:3|2343|t,3|2222|t
+        # fasta chunk idx| protein idx
+        # taxon:0|2342,1|32432;taxon2:3|2343,3|2222
         taxonlist = {z.split(':')[0]:z.split(':')[1].split(',') for z in peptide[-1].split(';')}
         # take mapping if taxon has genus part of chosen_taxons (x% taxon level)
         mappings = [taxonlist[z] for z in taxonlist if z in chosen_taxons]            
@@ -408,58 +367,52 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
     del all_passing_peptides
     
     # ============ CREATE refined protein DB ========================================================================#
-    num_proteins_per_peptide = {z:{'d':0,'t':0} for z in range(len(peplist))}  
     secondlevelproteins = set()
-    RefinedDBfile = os.path.join(S1_OutputFiles,'SecondLevelDB_INIpeplevel_'+str(INITIAL_PEPLEVEL_FDR)+'_genusabundance_'+str(TAXON_ABUNDANCE_THRESHOLD)+'_peplevel_'+str(REFINED_DB_PEPLEVEL_FDR)+'.fasta')
-    write_db = open(RefinedDBfile, 'w')
-
-    enzymerules = {'trypsin':r'([KR*](?=[^P]))'}
-    regex_enz = re.compile(enzymerules[enzyme])
-
-    if CREATE_DBPARTS_for_SEMITRYP_S2 == 1:
-        with open(os.path.join(tempfiledir,'Unsorted_combined.txt'),'w') as outfile:
-            outfile.write('ZZZZEND'+'\n')
-           
-    for f in [chunk for chunk in os.listdir(S1_fastachunk_dir) if chunk.endswith('.fasta') and 'revCat.fasta' not in chunk]: 
-
-        if CREATE_DBPARTS_for_SEMITRYP_S2 == 1:
-            t_sequence = ''
-            d_sequence = '' 
-
-        records = list(SeqIO.parse(os.path.join(S1_fastachunk_dir,f), "fasta"))
-        chunkID = f[:-6].split('_')[-1]
+    RefinedDBfile_t_dir = os.path.join(S1_OutputFiles,'RefinedProteinDB_t')
+    os.mkdir(RefinedDBfile_t_dir)
+    RefinedDBfile_d_dir = os.path.join(S1_OutputFiles,'RefinedProteinDB_d')
+    os.mkdir(RefinedDBfile_d_dir)
+    RefinedDBfile_target = os.path.join(RefinedDBfile_t_dir,'RefinedProteinDB_target.fasta')
+    RefinedDBfile_decoy = os.path.join(RefinedDBfile_d_dir,'RefinedProteinDB_decoy.fasta')
+    RefinedDBfile_combined = os.path.join(S1_OutputFiles, 'RefinedProteinDB.fasta')
+    write_db_t = open(RefinedDBfile_target, 'w')
+    write_db_d = open(RefinedDBfile_decoy, 'w')
+    combined_db = open(RefinedDBfile_combined,'w')
+    protnum = -1
+    
+    for f in xrange(max_fidx+1):
+        fidx = str(f)
+        #read chunk fasta into memory
+        with open(os.path.join(FASTA_dir, inv_fastaIDmap[fidx]+'.fasta'),'r') as infile:
+            records = ''.join(['$' if line[0]=='>' else line.strip() for line in infile.readlines()])
+        records = records.split('$')[1:]
 
         # targets
-        protidexes = [s[1] for s in target_proteins[chunkID]]
-        peptideindexes = [s[0] for s in target_proteins[chunkID]]
+        protidexes = [s[1] for s in target_proteins[fidx]]
         
-        for index, entry in enumerate(protidexes): 
-            protseq = str(records[entry].seq)
+        for entry in protidexes: 
+            protseq = records[entry]
             decoyseq = protseq[::-1]
             if protseq in secondlevelproteins:
                 continue
             secondlevelproteins.add(protseq)
-            num_proteins_per_peptide[peptideindexes[index]]['t']+=1
-            num_proteins_per_peptide[peptideindexes[index]]['d']+=1
 
             sequence_split = [protseq[i:i+60] for i in range(0, len(protseq), 60)]
             dec_sequence_split = [decoyseq[i:i+60] for i in range(0, len(decoyseq), 60)]
-            header = str(records[entry].name)
-            
-            write_db.write('>'+header+'\n'+'\n'.join(sequence_split)+'\n'+'>XXX_'+header+'\n'+'\n'.join(dec_sequence_split)+'\n')
-
-            if CREATE_DBPARTS_for_SEMITRYP_S2 == 1:
-                t_sequence += '$'+protseq+'*'   
-                d_sequence += '$'+decoyseq+'*'   
+            protnum+=1
+            header = 'Protein_'+str(protnum)
+        
+            write_db_t.write('>'+header+'\n'+'\n'.join(sequence_split)+'\n')
+            write_db_d.write('>XXX_'+header+'\n'+'\n'.join(dec_sequence_split)+'\n')
+            combined_db.write('>'+header+'\n'+'\n'.join(sequence_split)+'\n'+'>XXX_'+header+'\n'+'\n'.join(dec_sequence_split)+'\n')
                    
         del protidexes
-        
+
         # decoys
-        protidexes = [s[1] for s in decoy_proteins[chunkID]]
-        peptideindexes = [s[0] for s in decoy_proteins[chunkID]]
+        protidexes = [s[1] for s in decoy_proteins[fidx]]
         
-        for index, entry in enumerate(protidexes):
-            protseq = str(records[entry].seq)
+        for entry in protidexes:
+            protseq = records[entry]
             # if target prot seq already included, decoy already included, so skip
             if protseq in secondlevelproteins:
                 continue
@@ -467,59 +420,25 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
             if protseq in secondlevelproteins:
                 continue
             secondlevelproteins.add(protseq)     
-            num_proteins_per_peptide[peptideindexes[index]]['d']+=1                   
-            
+                            
             sequence_split = [protseq[i:i+60] for i in range(0, len(protseq), 60)]
-            header = str(records[entry].name)
+            protnum+=1
+            header = 'Protein_'+str(protnum)
             
-            write_db.write('>XXX_'+header+'\n'+'\n'.join(sequence_split)+'\n')
-
-            if CREATE_DBPARTS_for_SEMITRYP_S2 == 1:
-                d_sequence += '$'+protseq+'*'
+            write_db_d.write('>XXX_'+header+'\n'+'\n'.join(sequence_split)+'\n')
+            combined_db.write('>XXX_'+header+'\n'+'\n'.join(sequence_split)+'\n')
 
         del protidexes
         del records
 
-        if CREATE_DBPARTS_for_SEMITRYP_S2 == 1:
-            # $ indicates start, * indicates end of protein
-            result = insilicodigest(t_sequence, regex_enz, min_pep_len, max_pep_len, miscleavages,'semi','', REMOVE_KRP)
-            del t_sequence
-            result_d = insilicodigest(d_sequence, regex_enz, min_pep_len, max_pep_len, miscleavages,'semi','d_', REMOVE_KRP)
-            del d_sequence
-        
-            #write to file
-            if os.path.exists(os.path.join(tempfiledir,'Unsorted_combined.txt')):
-                outfile = open(os.path.join(tempfiledir,'Unsorted_combined.txt'),'a')
-            elif not os.path.exists(os.path.join(tempfiledir,'Unsorted_combined.txt')):
-                outfile = open(os.path.join(tempfiledir,'Unsorted_combined.txt'),'w')
-    
-            for pep in result:
-                outfile.write(pep+'\t'+';'.join(['|'+k[0]+'|'+k[1] for k in result[pep]]))
-                if pep in result_d:
-                    outfile.write(';'+';'.join(['|'+k[0]+'|'+k[1] for k in result_d[pep]]))
-                outfile.write('\n')
-            for pep in result_d:
-                if pep not in result:
-                    outfile.write(pep+'\t'+';'.join(['|'+k[0]+'|'+k[1] for k in result_d[pep]])+'\n')
-        
-            outfile.close()
-            del result
-            del result_d
-
     del secondlevelproteins
-    write_db.close()
-
-    if CREATE_DBPARTS_for_SEMITRYP_S2 == 1:
-        print 'Finished refined database creation...'
-        print 'Creating semi-tryptic peptide partitions...'
-        CreateDBPartitions(ProteoStorm_dir, subfoldername, miscleavages, 
-                                 min_pep_len, max_pep_len, REMOVE_KRP, 
-                                 max_massdiff, 'S2', enzyme,
-                                 RAMgb, parallel_n, cygwinpath)
+    write_db_t.close()
+    write_db_d.close()
+    combined_db.close()
     
-#    if CREATE_MODIFICATION_DBPARTS ==1:
-#        print 'creating modification s2 input files...'
-#        from InputFileCreation_ModPeptides import S2_Partitions_Mods
-#        print S2_Partitions_Mods(ProteoStorm_dir, subfoldername)
+    if save_space ==1:
+        os.remove(BESTPEPTIDEforSPECTRUMfile)
+        os.remove(BESTPSMforPEPTIDEfile)
+        os.remove(os.path.join(S1_OutputFiles, 'S1_passing_peptides.txt'))
     
     return time.time()-start_time
