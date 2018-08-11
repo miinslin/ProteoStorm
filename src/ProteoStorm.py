@@ -46,7 +46,7 @@ parser.add_argument("-r", "--RemoveSpectra",dest ="removespectra", default = 'na
 
 parser.add_argument("-pepfilter", "--PepfilterEXE", dest = "pepfilterexe", default = os.path.join(script_directory,Pepfilter_exe_OS[platform_os]),\
                     help="Path to core module 2 (peptide filtering) executable. Default: determined by OS")
-parser.add_argument("-pvaljar", "--pval_computation_jar", dest = "pvaljar", default = os.path.join(script_directory,'MSGFPlus_pvalue_KR.jar'),\
+parser.add_argument("-pvaljar", "--pval_computation_jar", dest = "pvaljar", default = os.path.join(script_directory,'MSGFPlus_pvalue.jar'),\
                     help = "Path to p-value computation jar. Default: MSGFPlus_pvalue_withmods.jar")
 parser.add_argument("-aafreq", "--aminoacid_freq", dest = "aafreq", default = os.path.join(script_directory,'364106_IL_transformed.fasta'),\
                     help = "Path to file specifying amino acid frequencies to use for core module 3. Do not recommend changing. Default: 364106_IL_transformed.fasta")
@@ -63,15 +63,15 @@ parser.add_argument("-m", "--FragmentMethodID", dest = "fragmethod", default = '
                     1: CID, 3: HCD (Default)")
 parser.add_argument("-S1spc", "--S1SharedPeakCount", dest = "s1spc", default = '7', \
                     help="Number of shared peak counts to use for S1 peptide filtering. Default: 7")
-parser.add_argument("-S2spc", "--S2SharedPeakCount", dest = "s2spc", default = '6', \
-                    help="Number of shared peak counts to use for S2 peptide filtering. Default: 6")
+parser.add_argument("-S2spc", "--S2SharedPeakCount", dest = "s2spc", default = '7', \
+                    help="Number of shared peak counts to use for S2 peptide filtering. Default: 7")
 
 parser.add_argument("-genera", "--GeneraRestrictionApproach", dest = "gapp", default = '0',\
                     help = "0: Do not use genera-restriction approach (Default). \
                     1: Use genera-restriction approach. Place UniProt fasta files in /[Database_dir]/UniProt_fasta,\
                     and RefSeq fasta files in /[Database_dir]/RefSeq_fasta.")
-#parser.add_argument("-TMT", "--TMTlabeling", dest = "tmtlabel", default = '0',\
-#                    help = "Use TMT labeling. Default: 0")
+parser.add_argument("-TMT", "--TMTlabeling", dest = "tmtlabel", default = '0',\
+                    help = "Use TMT labeling. Default: 0")
 
 # DO NOT CHANGE:
 #parser.add_argument("-mem ", "--RAMusage_GB", dest = "memory", default = '8',\
@@ -98,13 +98,13 @@ min_pep_len = 8  # minimum number of amino acids in peptide
 max_pep_len = 40  # maximum number of amino acids in peptide
 REFINEDDB_pepFDR = float(args.refinedDB_fdr) # peptide-level FDR for refined protein database
 GENERA_RDB = int(args.gapp)
-REMOVE_KRP = 1 # do not include semi-tryptic peptides with K.P or R.P for S2 input files
+
 enzyme = 'trypsin' # does not cut after K/R if followed by P
 precursormasstol = float(args.ms1pmt)
 fragmasstol = float(args.ms2mt)
 instrument = str(int(args.ms2dID))
 fragmentmet = str(int(args.fragmethod))
-TMT_labeling = 0 #int(args.tmtlabel)
+TMT_labeling = int(args.tmtlabel)
 RAMgb = '8' #str(int(args.memory))
 
 num_Spectra = 100000*int(RAMgb)/8 # number of spectra to partition per iteration
@@ -117,7 +117,8 @@ if TMT_labeling not in [0,1]:
 if TMT_labeling == 1:
     modsfile = os.path.normpath(os.path.join(script_directory,'MSGF_C57_TMT.txt'))
     print 'using modfile: ', modsfile
-    pepmass_dist_file = os.path.normpath(os.path.join(script_directory, 'DBmassDistributions','RefUP++_TMT_2872778677.txt'))
+    #pepmass_dist_file = os.path.normpath(os.path.join(script_directory, 'DBmassDistributions','RefUpTMT_2872778677.txt'))
+    print 'using mass distribution file: ', pepmass_dist_file
     
 
 ## SET DIRECTORIES and FILES
@@ -284,7 +285,7 @@ runtimes = RunModules(stage, mods, S1_SPC,
                spectral_dir, spectralparts_dir,
                spectra_remove, massbinranges,
                miscleavages, min_pep_len, max_pep_len,
-               REMOVE_KRP, massbins,
+               massbins,
                Pepfilter_exe, MSGFpvaluejar,
                aafreq_fasta, REFINEDDB_pepFDR,
                GENERA_RDB, ProteoStormLOG, enzyme,
@@ -307,14 +308,14 @@ print 'Beginning stage two...'
 STAGETWO_start = time.time()
 stage = 'S2'
 mods = ''
-runtimes = RunModules(stage, mods, S1_SPC,
+runtimes = RunModules(stage, mods, S2_SPC,
                ProteoStorm_dir,subdir,
                FASTA_dir, fastaIDmap,
                bufsize, bufsize2,
                spectral_dir, spectralparts_dir,
                spectra_remove, massbinranges,
                miscleavages, min_pep_len, max_pep_len,
-               REMOVE_KRP, massbins,
+               massbins,
                Pepfilter_exe, MSGFpvaluejar,
                aafreq_fasta, REFINEDDB_pepFDR,
                GENERA_RDB, ProteoStormLOG, enzyme,

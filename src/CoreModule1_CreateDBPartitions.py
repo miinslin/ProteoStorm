@@ -90,6 +90,9 @@ def CopyPeptideS2(pepseq, info, M_ranges, M, C, perbin_bytes, output_directory,
     pepseq = pepseq.replace('L','I')
     peplength = len(pepseq)
     pepmass = calcmass_cmm(pepseq, TMT_labeling)
+    # if TMT, remove TMT_monoisotopicmass from N-term for now, add back later
+    if TMT_labeling==1 and pepmass:
+        pepmass[0] = pepmass[0] - TMT_monoisotopicmass
 
     for i in xrange(peplength):
         #if left anchor, and pepseq[0]=='M' and pre == '-', need to make semi tryptic peps with M removed
@@ -100,7 +103,10 @@ def CopyPeptideS2(pepseq, info, M_ranges, M, C, perbin_bytes, output_directory,
                     if any(aa in l_spep for aa in 'XBJOUZ?-*'):
                         l_spep= ''
                     if l_spep:
-                        l_spep_mass = round(sum(pepmass[1:peplength-i])+HOH, 4)
+                        if TMT_labeling==0:
+                            l_spep_mass = round(sum(pepmass[1:peplength-i])+HOH, 4)
+                        if TMT_labeling==1:
+                            l_spep_mass = round(sum(pepmass[1:peplength-i])+HOH +TMT_monoisotopicmass, 4)
                         bin_i = bisect_left(M_ranges, l_spep_mass)
                         if i!=0: 
                             lspep_info = info[:-2]+'-' #preaa should always be -
@@ -127,7 +133,10 @@ def CopyPeptideS2(pepseq, info, M_ranges, M, C, perbin_bytes, output_directory,
                 if any(aa in l_spep for aa in 'XBJOUZ?-*'):
                     l_spep= ''
                 if l_spep:
-                    l_spep_mass = round(sum(pepmass[0:peplength-i])+HOH, 4)
+                    if TMT_labeling==0:
+                        l_spep_mass = round(sum(pepmass[0:peplength-i])+HOH, 4)
+                    if TMT_labeling==1:
+                        l_spep_mass = round(sum(pepmass[0:peplength-i])+HOH +TMT_monoisotopicmass, 4)
                     bin_i = bisect_left(M_ranges, l_spep_mass)
                     
                     if i!=0: #0 is the fully-tryptic peptide, do not need to update info
@@ -152,7 +161,10 @@ def CopyPeptideS2(pepseq, info, M_ranges, M, C, perbin_bytes, output_directory,
                     if any(aa in r_spep for aa in 'XBJOUZ?-*'):
                         r_spep = ''
                     if r_spep:
-                        r_spep_mass = round(sum(pepmass[i:peplength])+HOH, 4)
+                        if TMT_labeling==0:
+                            r_spep_mass = round(sum(pepmass[i:peplength])+HOH, 4)
+                        if TMT_labeling==1:
+                            r_spep_mass = round(sum(pepmass[i:peplength])+HOH +TMT_monoisotopicmass, 4)
                         bin_i = bisect_left(M_ranges, r_spep_mass)
                         if pepseq[0] == 'M' and info[-2]=='-' and i==1:
                             rspep_info = info[:-2]+'-'+info[-1] 
@@ -438,7 +450,7 @@ def CreateDBPartitions(tempdir, finaldir, stage):
                     peptides[pep] = set([sp[2]])
                     pepmasses[pep] = float(sp[1])
     
-        pepmasses = sorted(pepmasses.items(), key = itemgetter(1))
+        pepmasses = sorted(pepmasses.items(), key = itemgetter(1,0))
 
         with open(f2,'w') as outfile:
             for index, entry in enumerate(pepmasses):
@@ -468,8 +480,15 @@ def CreateDBPartitions(tempdir, finaldir, stage):
                         outfile.write(mass+'\t'+prepost[0]+'.'+pepseq+'.'+prepost[1]+'\t'+str(index)+'\t'+';'.join(mappings_keep)+'\n')
     
                 if stage== 'S2':
-                    tryptic_idx = [zi for zi,z in enumerate(prepost) \
-                        if (z[0] in ['K','R','-'] and (pepseq[-1] in ['K','R'] or z[1]=='-'))]
+                    tryptic_idx = [zi for zi,z in enumerate(prepost) if ( 
+                                           (z[0] in ['K','R'] and pepseq[0]!='P' and (pepseq[-1] in ['K','R'] and z[1]!='P') )
+                                           or
+                                           (z[0] in ['K','R'] and pepseq[0]!='P' and z[1]=='-')
+                                           or
+                                           (z[0]=='-' and (pepseq[-1] in ['K','R'] and z[1]!='P'))
+                                           or
+                                           (z[0]=='-' and z[1]=='-')                                   
+                                           )]
                 
                     if tryptic_idx:
                         tryptic_target_idx = [v for vi,v in enumerate(mappings) \
