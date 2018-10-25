@@ -91,7 +91,7 @@ Alternative configurations for ProteoStorm
 
 Notes
 ---------------
-If using the RefUP++ database, please include the following two parameters in your command.
---PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt 
---database_partitions 400
+If using the ***RefUP++ database***, please include the following two parameters in your command.
+***--PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt 
+--database_partitions 400***
 
