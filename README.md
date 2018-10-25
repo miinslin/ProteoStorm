@@ -54,7 +54,9 @@ python -u ./src/ProteoStorm.py
 	
 Output: ProteoStorm_output.txt (Peptide-spectrum matches (PSMs) with p-values computed using the MS-GF+ generating function.)
 ```
-	
+
+***If using the RefUP++ database, please see the Notes section below.***
+
 Demo
 ---------------
 **1.** Download and extract [demo files](https://drive.google.com/open?id=1LGNSdR4n0mNlztmIryi9SeLoy9420ugy) into ./ProteoStorm/example<br />
@@ -91,7 +93,8 @@ Alternative configurations for ProteoStorm
 
 Notes
 ---------------
-If using the ***RefUP++ database***, please include the following two parameters in your command.
-***--PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt 
---database_partitions 400***
+If using the RefUP++ database, please include the following two parameters in your command.
+
+***--PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt***
+***--database_partitions 400***
 
