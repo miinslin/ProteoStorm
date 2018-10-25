@@ -88,3 +88,10 @@ python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_app
 Alternative configurations for ProteoStorm
 ---------------
 [Alternative configurations for ProteoStorm PDF download](https://drive.google.com/file/d/17y7JxIy7duakiXHIFQ9P1IlMX1gMtM-i/view?usp=sharing)
+
+Notes
+---------------
+If using the RefUP++ database, please include the following two parameters in your command.
+--PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt 
+--database_partitions 400
+
