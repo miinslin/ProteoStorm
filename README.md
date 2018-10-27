@@ -61,7 +61,7 @@ Output: ProteoStorm_output.txt (Peptide-spectrum matches (PSMs) with p-values co
 
 Demo
 ---------------
-**1.** Download and extract [demo files](https://drive.google.com/open?id=1LGNSdR4n0mNlztmIryi9SeLoy9420ugy) into ./ProteoStorm/example<br />
+**1.** Download and extract [demo files](https://drive.google.com/file/d/1bon0BZB7pJE9zzemtvnVcvybE_Y2UcDG/view?usp=sharing) into ./ProteoStorm/example<br />
 **2.** Download [Mass distribution files](https://drive.google.com/open?id=1FfQFeheN2BUSZ9BaA-t0PyspKpYIJrwn) into ./ProteoStorm/src/DBmassDistributions<br />
 **3.** Run either Command 1 or 2 (genera-restriction approach) as provided below.<br />
 **4.** The expected output files for the test runs are located at ./ProteoStorm/example/ProteoStorm_Out/prerun_demo and ./ProteoStorm/example/ProteoStorm_Out_GeneraRestrictionApproach/prerun_demo.
