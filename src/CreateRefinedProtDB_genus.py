@@ -367,7 +367,8 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
     del all_passing_peptides
     
     # ============ CREATE refined protein DB ========================================================================#
-    secondlevelproteins = set()
+#    secondlevelproteins = set()
+    secondlevelproteins = {}
     RefinedDBfile_t_dir = os.path.join(S1_OutputFiles,'RefinedProteinDB_t')
     os.mkdir(RefinedDBfile_t_dir)
     RefinedDBfile_d_dir = os.path.join(S1_OutputFiles,'RefinedProteinDB_d')
@@ -387,15 +388,22 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
             records = ''.join(['$' if line[0]=='>' else line.strip() for line in infile.readlines()])
         records = records.split('$')[1:]
 
+        with open(os.path.join(FASTA_dir, inv_fastaIDmap[fidx]+'.fasta'),'r') as infile:
+            records_name = [line.strip().split()[0][1:] for line in infile.readlines() if line[0]=='>']
+            
         # targets
         protidexes = [s[1] for s in target_proteins[fidx]]
         
         for entry in protidexes: 
             protseq = records[entry]
+            name = records_name[entry]
             decoyseq = protseq[::-1]
             if protseq in secondlevelproteins:
+                secondlevelproteins[protseq]['target'].add(name)
+                secondlevelproteins[protseq]['decoy'].add(name)
                 continue
-            secondlevelproteins.add(protseq)
+            #secondlevelproteins.add(protseq)
+            secondlevelproteins[protseq] = {'target':set([name]),'decoy':set([name])}
 
             sequence_split = [protseq[i:i+60] for i in range(0, len(protseq), 60)]
             dec_sequence_split = [decoyseq[i:i+60] for i in range(0, len(decoyseq), 60)]
@@ -404,7 +412,6 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
         
             write_db_t.write('>'+header+'\n'+'\n'.join(sequence_split)+'\n')
             write_db_d.write('>XXX_'+header+'\n'+'\n'.join(dec_sequence_split)+'\n')
-            combined_db.write('>'+header+'\n'+'\n'.join(sequence_split)+'\n'+'>XXX_'+header+'\n'+'\n'.join(dec_sequence_split)+'\n')
                    
         del protidexes
 
@@ -413,27 +420,39 @@ def CreateRefinedDBGenus(ProteoStorm_dir, subfoldername,
         
         for entry in protidexes:
             protseq = records[entry]
-            # if target prot seq already included, decoy already included, so skip
+            name = records_name[entry]
+            # if protseq in secondlevelproteins, 1) target prot seq already included, decoy already included, 2) no tarrget, but decoy already included
             if protseq in secondlevelproteins:
+                secondlevelproteins[protseq]['decoy'].add(name)
                 continue
-            protseq = protseq[::-1]
-            if protseq in secondlevelproteins:
-                continue
-            secondlevelproteins.add(protseq)     
-                            
-            sequence_split = [protseq[i:i+60] for i in range(0, len(protseq), 60)]
+            #secondlevelproteins.add(protseq)     
+            secondlevelproteins[protseq]= {'target':set(),'decoy':set([name])}
+            
+            xxx_protseq = protseq[::-1] #decoy sequence                
+            sequence_split = [xxx_protseq[i:i+60] for i in range(0, len(xxx_protseq), 60)]
             protnum+=1
             header = 'Protein_'+str(protnum)
             
             write_db_d.write('>XXX_'+header+'\n'+'\n'.join(sequence_split)+'\n')
-            combined_db.write('>XXX_'+header+'\n'+'\n'.join(sequence_split)+'\n')
 
         del protidexes
         del records
 
-    del secondlevelproteins
     write_db_t.close()
     write_db_d.close()
+    # write to combined db and include all prot names
+    for protseq in secondlevelproteins:
+        if secondlevelproteins[protseq]['target']:
+            header = '>'+';'.join(secondlevelproteins[protseq]['target'])
+            sequence_split = [protseq[i:i+60] for i in range(0, len(protseq), 60)]
+            combined_db.write(header+'\n'+'\n'.join(sequence_split)+'\n')
+        if secondlevelproteins[protseq]['decoy']:
+            xxx_header = '>XXX_'+';XXX_'.join(secondlevelproteins[protseq]['decoy'])
+            xxx_protseq = protseq[::-1]
+            xxx_sequence_split = [xxx_protseq[i:i+60] for i in range(0, len(xxx_protseq), 60)]
+            combined_db.write(xxx_header+'\n'+'\n'.join(xxx_sequence_split)+'\n')
+    
+    del secondlevelproteins
     combined_db.close()
     
     if save_space ==1:

@@ -202,7 +202,7 @@ def CreateRefinedDBPeptide(ProteoStorm_dir, subfoldername,
         del matches
         
         # ================= CREATE REFINED prot DB ================= #
-        secondlevelproteins = set()
+        secondlevelproteins = {}
         RefinedDBfile_t_dir = os.path.join(S1output,'RefinedProteinDB_t')
         os.mkdir(RefinedDBfile_t_dir)
         RefinedDBfile_d_dir = os.path.join(S1output,'RefinedProteinDB_d')
@@ -217,14 +217,18 @@ def CreateRefinedDBPeptide(ProteoStorm_dir, subfoldername,
         
         num_proteins_per_peptide = {z:{'d':0,'t':0} for z in range(len(unique_peplist))}
         
-        with open(os.path.join(S2_InputFiles,'PepProt.match'),'r') as infile:
-            for line in infile:
-                sp = line.strip().split('\t')
+        with open(os.path.join(S2_InputFiles,'PepProt.match'),'r') as pepprotmatch:
+            for ln in pepprotmatch:
+                sp = ln.strip().split('\t')
                 f = inv_fastaIDmap[sp[0]]
                 #read chunk fasta into memory
                 with open(os.path.join(FASTA_dir,f+'.fasta'),'r') as infile:
                     records = ''.join(['$' if line[0]=='>' else line.strip() for line in infile.readlines()])
                 records = records.split('$')[1:]
+                
+                with open(os.path.join(FASTA_dir,f+'.fasta'),'r') as infile:
+                    records_name = [line.strip().split()[0][1:] for line in infile.readlines() if line[0]=='>']
+                
                 alllines = sp[1:]
             
                 #targets
@@ -234,10 +238,15 @@ def CreateRefinedDBPeptide(ProteoStorm_dir, subfoldername,
                     pep_idx = pep[1]
                     for entry in [int(i) for i in pep[0]]: 
                         protseq = records[entry]
+                        name = records_name[entry]
                         decoyseq = protseq[::-1]
                         if protseq in secondlevelproteins:
+                            secondlevelproteins[protseq]['target'].add(name)
+                            secondlevelproteins[protseq]['decoy'].add(name)
                             continue
-                        secondlevelproteins.add(protseq)
+                        #secondlevelproteins.add(protseq)
+                        secondlevelproteins[protseq] = {'target':set([name]),'decoy':set([name])}                        
+                        
                         num_proteins_per_peptide[pep_idx]['t']+=1
                         num_proteins_per_peptide[pep_idx]['d']+=1
             
@@ -248,7 +257,6 @@ def CreateRefinedDBPeptide(ProteoStorm_dir, subfoldername,
                         
                         write_db_t.write('>'+header+'\n'+'\n'.join(sequence_split)+'\n')
                         write_db_d.write('>XXX_'+header+'\n'+'\n'.join(dec_sequence_split)+'\n')
-                        combined_db.write('>'+header+'\n'+'\n'.join(sequence_split)+'\n'+'>XXX_'+header+'\n'+'\n'.join(dec_sequence_split)+'\n')
                 
                 del pep_prot_match
                 
@@ -259,27 +267,41 @@ def CreateRefinedDBPeptide(ProteoStorm_dir, subfoldername,
                     pep_idx = pep[1]
                     for entry in [int(i) for i in pep[0]]: 
                         protseq = records[entry]
-                        # if target prot seq already included, decoy already included, so skip
+                        name = records_name[entry]
+
+                        # if protseq in secondlevelproteins, 1) target prot seq already included, decoy already included, 2) no tarrget, but decoy already included
                         if protseq in secondlevelproteins:
+                            secondlevelproteins[protseq]['decoy'].add(name)
                             continue
-                        protseq = protseq[::-1]
-                        if protseq in secondlevelproteins:
-                            continue
-                        secondlevelproteins.add(protseq)
-                        num_proteins_per_peptide[pep_idx]['d']+=1
-                               
-                        sequence_split = [protseq[i:i+60] for i in range(0, len(protseq), 60)]
+                        #secondlevelproteins.add(protseq)     
+                        secondlevelproteins[protseq]= {'target':set(),'decoy':set([name])}
+
+                        num_proteins_per_peptide[pep_idx]['d']+=1                        
+                        xxx_protseq = protseq[::-1] #decoy sequence                
+                        sequence_split = [xxx_protseq[i:i+60] for i in range(0, len(xxx_protseq), 60)]
                         protnum+=1
                         header = 'Protein_'+str(protnum)
                         
                         write_db_d.write('>XXX_'+header+'\n'+'\n'.join(sequence_split)+'\n')
-                        combined_db.write('>XXX_'+header+'\n'+'\n'.join(sequence_split)+'\n')
                 
                 del pep_prot_match
 
-        del secondlevelproteins
         write_db_t.close()
         write_db_d.close()
+        
+        # write to combined db and include all prot names
+        for protseq in secondlevelproteins:
+            if secondlevelproteins[protseq]['target']:
+                header = '>'+';'.join(secondlevelproteins[protseq]['target'])
+                sequence_split = [protseq[i:i+60] for i in range(0, len(protseq), 60)]
+                combined_db.write(header+'\n'+'\n'.join(sequence_split)+'\n')
+            if secondlevelproteins[protseq]['decoy']:
+                xxx_header = '>XXX_'+';XXX_'.join(secondlevelproteins[protseq]['decoy'])
+                xxx_protseq = protseq[::-1]
+                xxx_sequence_split = [xxx_protseq[i:i+60] for i in range(0, len(xxx_protseq), 60)]
+                combined_db.write(xxx_header+'\n'+'\n'.join(xxx_sequence_split)+'\n')
+        
+        del secondlevelproteins
         combined_db.close()
         os.remove(os.path.join(S2_InputFiles,'PepProt.match'))
         

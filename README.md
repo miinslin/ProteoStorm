@@ -1,5 +1,7 @@
 # ProteoStorm v06222018 #
 
+Beyter and Lin et al. (2018). ProteoStorm: An Ultrafast Metaproteomics Database Search Framework. Cell Systems. 7, 463–467
+
 Software Requirements
 ---------------
 
@@ -40,7 +42,7 @@ Usage
 ---------------
 ```sh
 python -u ./src/ProteoStorm.py
-	-D DatabaseDirectory (Directory containing database files in fasta format)
+	-D DatabaseDirectory (Directory containing database files in fasta format, use .fasta for the file extension)
 	-S SpectralDirectory (Directory containing spectral datasets in MGF format, peak-picked and converted from RAW using MSConvert)
 	-O OutputDirectory
 	[-MSMS SubdirectoryName] (Name of metaproteomics dataset, Default: date_time)
@@ -72,7 +74,7 @@ python -u ./src/ProteoStorm.py --Database ./example/fasta --Spectra ./example/mg
 ```
 Command 2 (genera-restriction approach)
 ```
-python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --refDBfdr 0.01
+python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --refDBfdr 0.01 --PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt --database_partitions 400
 ```
 
 ### Windows ### 
@@ -84,7 +86,7 @@ python -u ./src/ProteoStorm.py --Database ./example/fasta --Spectra ./example/mg
 ```
 Command 2 (genera-restriction approach)
 ```
-python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --refDBfdr 0.01 --CygwinPATH "C:/cygwin64/bin/run.exe"
+python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_approach --Spectra ./example/mgf --RemoveSpectra ./example/HS_matched_spectra.txt --SpectralDataset "demo" --output ./example/ProteoStorm_Out_GeneraRestrictionApproach --PrecursorMassTolerance 10 --FragmentMassTolerance 0.015 --InstrumentID 3 --FragmentMethodID 3 --GeneraRestrictionApproach 1 --refDBfdr 0.01 --PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt --database_partitions 400 --CygwinPATH "C:/cygwin64/bin/run.exe"
 ```
 
 Alternative configurations for ProteoStorm

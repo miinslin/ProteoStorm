@@ -79,7 +79,7 @@ parser.add_argument("-TMT", "--TMTlabeling", dest = "tmtlabel", default = '0',\
 parser.add_argument("-p", "--parallel", dest = "para_n", default = '1',\
                     help = "Do not recommend changing. Default: 1 thread")
 parser.add_argument("-del", "--deletefiles", dest = "del_ss", default = '1',\
-                    help = "0: Keep or 1: delete files for development purposes. Default: 1")
+                    help = "0: Keep or 1: delete files. Default: 1")
 parser.add_argument("-s1fdr", "--refDBfdr", dest = "refinedDB_fdr",default = 0.05,\
                     help = "Do not recommend changing. Default: 0.05")
 
