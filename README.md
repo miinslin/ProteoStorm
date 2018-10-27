@@ -67,6 +67,7 @@ Demo
 **4.** The expected output files for the test runs are located at ./ProteoStorm/example/ProteoStorm_Out/prerun_demo and ./ProteoStorm/example/ProteoStorm_Out_GeneraRestrictionApproach/prerun_demo.
 
 ### Linux ### 
+CoreModule2_PeptideFiltering_Linux-x86_64.exe was compiled on CentOS 6.10 with Kernel version 2.6.32-754.2.1.el6.x86_64
 
 Command 1
 ```
