@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import os, time, argparse, sys, platform
+import os, time, argparse, sys, platform, psutil
 from ProteoStormModules import RunModules
 from PSM_output import S2_PSMs
 from S2_peplevelFDR import PeptideLvlFDRout
 
 ## CHECK PLATFORM
 platform_os = platform.system()
+print 'OS: ', platform_os
 if platform_os not in ['Linux','Windows']:
     raise ValueError(platform_os, ' platform system not supported. Exiting.')
 
@@ -14,6 +15,9 @@ script_directory = os.path.abspath(os.path.dirname(sys.argv[0])) #src directory
 
 Pepfilter_exe_OS = {'Linux':'CoreModule2_PeptideFiltering_Linux-x86_64.exe',\
                 'Windows':'CoreModule2_PeptideFiltering_Windows-x86_64.exe'}
+
+available_RAM = psutil.virtual_memory().available
+print 'Available RAM: ', available_RAM, '('+str(round(available_RAM/(1024.0**3),2))+' Gb)'
 
 current_datetime = time.strftime("%b-%d-%Y_%H:%M:%S")
 date_split = current_datetime.split('_')[0].split('-')
@@ -73,7 +77,7 @@ parser.add_argument("-genera", "--GeneraRestrictionApproach", dest = "gapp", def
 parser.add_argument("-TMT", "--TMTlabeling", dest = "tmtlabel", default = '0',\
                     help = "Use TMT labeling. Default: 0")
 
-# DO NOT CHANGE:
+# NOT FULLY TESTED:
 #parser.add_argument("-mem ", "--RAMusage_GB", dest = "memory", default = '8',\
 #                    help = "Do not recommend changing. Default: 8GB")
 parser.add_argument("-p", "--parallel", dest = "para_n", default = '1',\
@@ -91,8 +95,9 @@ S1_SPC = int(args.s1spc)
 S2_SPC = int(args.s2spc)
 parallel_n = int(args.para_n)
 pepmass_dist_file = os.path.normpath(args.pmdist)
-bufsize = 1000*1024*1024
-bufsize2 = 600*1024*1024
+RAMgb = '8' #str(int(args.memory))
+bufsize = 1000*1024*1024*(int(RAMgb)/8) # this determines the number of fasta files read/processed during database partitioning
+bufsize2 = 600*1024*1024*(int(RAMgb)/8) # this determines the max size of the stored string before being written to a database partition
 miscleavages = 1  # max number of miscleavages allowed.
 min_pep_len = 8  # minimum number of amino acids in peptide
 max_pep_len = 40  # maximum number of amino acids in peptide
@@ -105,9 +110,8 @@ fragmasstol = float(args.ms2mt)
 instrument = str(int(args.ms2dID))
 fragmentmet = str(int(args.fragmethod))
 TMT_labeling = int(args.tmtlabel)
-RAMgb = '8' #str(int(args.memory))
 
-num_Spectra = 100000*int(RAMgb)/8 # number of spectra to partition per iteration
+num_Spectra = 100000*(int(RAMgb)/8) # number of spectra to partition per iteration
 save_space = int(args.del_ss)# save disk space
 modsfile = os.path.normpath(os.path.join(script_directory,'MSGF_C57.txt'))
 
@@ -162,6 +166,18 @@ if spectra_remove != 'na':
 for dirname in [FASTA_dir, spectral_dir, ProteoStorm_dir]:
     if not os.path.isdir(dirname):
         dne_dir_files.append(dirname)
+
+#check if extension is .fasta
+#give warning if fasta file is larger than available_RAMgb
+for fasta_fn in os.listdir(FASTA_dir):
+    if not fasta_fn.endswith('.fasta'):
+        warning_text = fasta_fn+' has file extension "'+os.path.splitext(fasta_fn)[1]+'". Input protein fasta files must use file extension ".fasta"'
+        raise ValueError(warning_text)
+    fastafilesize = os.path.getsize(os.path.join(FASTA_dir, fasta_fn))    
+    if fastafilesize>available_RAM:
+        warning_text = fasta_fn+' is '+str(round(fastafilesize/(1024.0**3),2))+'Gb. You may run out of memory during S1 database partitioning if the filesize is larger than your available RAM. RECOMMENDATION: Split fasta file into smaller chunks.'
+        raise ValueError(warning_text)
+         
 for filename in [Pepfilter_exe, MSGFpvaluejar, aafreq_fasta, modsfile, pepmass_dist_file]:
     if not os.path.isfile(filename):
         dne_dir_files.append(filename)

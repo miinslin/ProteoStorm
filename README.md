@@ -9,7 +9,7 @@ Software Requirements
 --filter 'titleMaker \<RunId\>.\<ScanNumber\>.\<ScanNumber\>.\<ChargeState\> File:"\<SourcePath\>", NativeID:"\<Id\>"'
 
 ### Linux ###
-1. ```Anaconda 2.7``` ***or*** ```Python2.7``` with numpy <br />
+1. ```Anaconda 2.7``` ***or*** ```Python2.7``` with numpy and psutil <br />
 ```sh
 $ wget https://repo.continuum.io/archive/Anaconda2-5.1.0-Linux-x86_64.sh
 $ bash Anaconda2-5.1.0-Linux-x86_64.sh
