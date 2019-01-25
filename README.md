@@ -6,7 +6,7 @@ Software Requirements
 ---------------
 
 [MSConvert](http://proteowizard.sourceforge.net/tools.shtml) required for peak-picking and converting RAW files to MGF format. If not using the MSConvert GUI, include the following [filter](http://proteowizard.sourceforge.net/tools/filters.html) for the expected TITLE format:
---filter 'titleMaker <RunId>.<ScanNumber>.<ScanNumber>.<ChargeState> File:"<SourcePath>", NativeID:"<Id>"'
+--filter 'titleMaker \<RunId\>.\<ScanNumber\>.\<ScanNumber\>.\<ChargeState\> File:"\<SourcePath\>", NativeID:"\<Id\>"'
 
 ### Linux ###
 1. ```Anaconda 2.7``` ***or*** ```Python2.7``` with numpy <br />
