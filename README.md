@@ -5,7 +5,8 @@ Beyter and Lin et al. (2018). ProteoStorm: An Ultrafast Metaproteomics Database 
 Software Requirements
 ---------------
 
-[MSConvert](http://proteowizard.sourceforge.net/tools.shtml) required for peak-picking and converting RAW files to MGF format.
+[MSConvert](http://proteowizard.sourceforge.net/tools.shtml) required for peak-picking and converting RAW files to MGF format. If not using the MSConvert GUI, include the following [filter](http://proteowizard.sourceforge.net/tools/filters.html) for the expected TITLE format:
+--filter 'titleMaker <RunId>.<ScanNumber>.<ScanNumber>.<ChargeState> File:"<SourcePath>", NativeID:"<Id>"'
 
 ### Linux ###
 1. ```Anaconda 2.7``` ***or*** ```Python2.7``` with numpy <br />
@@ -97,7 +98,9 @@ Alternative configurations for ProteoStorm
 Notes
 ---------------
 If using the RefUP++ database, please include the following two parameters in your command.
-
 ***--PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt***
 ***--database_partitions 400***
 
+If using the genera-restriction approach, the sequence headers in your protein fasta files should have the following format:
+***>[sequence_identifier]\t[genus]\t[ncbi_taxonomyID]***
+***ex: >NP_819020.1\tCoxiella\t227377***
