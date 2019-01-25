@@ -98,9 +98,13 @@ Alternative configurations for ProteoStorm
 Notes
 ---------------
 If using the RefUP++ database, please include the following two parameters in your command.
+
 ***--PepMassDistribution ./src/DBmassDistributions/RefUp_2872778677.txt***
+
 ***--database_partitions 400***
 
 If using the genera-restriction approach, the sequence headers in your protein fasta files should have the following format:
+
 ***>[sequence_identifier]\t[genus]\t[ncbi_taxonomyID]***
-***ex: >NP_819020.1\tCoxiella\t227377***
+
+***ex:*** >NP_819020.1\tCoxiella\t227377
