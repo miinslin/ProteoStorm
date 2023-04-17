@@ -1,4 +1,4 @@
 Example files can be downloaded here:
-https://drive.google.com/open?id=1FfQFeheN2BUSZ9BaA-t0PyspKpYIJrwn
+https://drive.google.com/file/d/1-1TrKEUicjO9yZAcfXgW2O_8aq5R6_WD/view?usp=share_link
 
 Extract files and place them in the ./ProteoStorm/src/DBmassDistributions directory.

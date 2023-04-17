@@ -1,8 +1,4 @@
 Example files can be downloaded here:
-https://drive.google.com/file/d/1bon0BZB7pJE9zzemtvnVcvybE_Y2UcDG/view?usp=sharing
+https://drive.google.com/file/d/1-NwxlDjSX5Sh0PRr0jDIhcI2V6bbJtWz/view?usp=share_link
 
 Extract files and place them in the ./ProteoStorm/example directory.
-
-# ===================
-# older versions
-#[example_62118] (https://drive.google.com/file/d/1LGNSdR4n0mNlztmIryi9SeLoy9420ugy/view?usp=sharing)
