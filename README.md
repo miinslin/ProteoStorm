@@ -62,8 +62,8 @@ Output: ProteoStorm_output.txt (Peptide-spectrum matches (PSMs) with p-values co
 
 Demo
 ---------------
-**1.** Download and extract [demo files](https://drive.google.com/file/d/1-NwxlDjSX5Sh0PRr0jDIhcI2V6bbJtWz/view?usp=share_link) into ./ProteoStorm/example<br />
-**2.** Download [Mass distribution files](https://drive.google.com/file/d/1-1TrKEUicjO9yZAcfXgW2O_8aq5R6_WD/view?usp=share_link) into ./ProteoStorm/src/DBmassDistributions<br />
+**1.** Download and extract [demo files](https://drive.google.com/open?id=11XdsrkCV6ds1CBXrARVceSuwWYTWWY9m) into ./ProteoStorm/example<br />
+**2.** Download [Mass distribution files](https://drive.google.com/open?id=1L87XEmlYu373MGb0f2Mft96ao1GyQvme) into ./ProteoStorm/src/DBmassDistributions<br />
 **3.** Run either Command 1 or 2 (genera-restriction approach) as provided below.<br />
 **4.** The expected output files for the test runs are located at ./ProteoStorm/example/ProteoStorm_Out/prerun_demo and ./ProteoStorm/example/ProteoStorm_Out_GeneraRestrictionApproach/prerun_demo.
 
@@ -93,7 +93,7 @@ python -u ./src/ProteoStorm.py --Database ./example/fasta_genera_restriction_app
 
 Alternative configurations for ProteoStorm
 ---------------
-[Alternative configurations for ProteoStorm PDF download](https://drive.google.com/file/d/15ijDUTVzhrzELMoDQiV2vwFl4RVLtH9G/view?usp=sharing)
+[Alternative configurations for ProteoStorm PDF download](https://drive.google.com/open?id=1V57l_OnDXbGlqlyL6S3ASj7eFBwA9TAQ)
 
 Notes
 ---------------

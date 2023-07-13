@@ -1,4 +1,4 @@
 Example files can be downloaded here:
-https://drive.google.com/file/d/1-NwxlDjSX5Sh0PRr0jDIhcI2V6bbJtWz/view?usp=share_link
+https://drive.google.com/open?id=11XdsrkCV6ds1CBXrARVceSuwWYTWWY9m
 
 Extract files and place them in the ./ProteoStorm/example directory.
